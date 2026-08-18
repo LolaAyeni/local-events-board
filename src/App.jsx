@@ -1,16 +1,51 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import './App.css'
 import CategoryFilter from './components/CategoryFilter.jsx'
+import EventDetails from './components/EventDetails.jsx'
 import EventList from './components/EventList.jsx'
+import EventForm from './components/EventForm.jsx'
 import events from './data/events.js'
 
 function App() {
   const [selectedCategory, setSelectedCategory] = useState('All events')
-  const categories = [...new Set(events.map((event) => event.category))]
+  const [localEvents, setLocalEvents] = useState(events)
+  const [selectedEvent, setSelectedEvent] = useState(null)
+  const detailsTriggerRef = useRef(null)
+  const categories = [...new Set(localEvents.map((event) => event.category))]
   const visibleEvents =
     selectedCategory === 'All events'
-      ? events
-      : events.filter((event) => event.category === selectedCategory)
+      ? localEvents
+      : localEvents.filter((event) => event.category === selectedCategory)
+
+  function handleSubmitEvent(event) {
+    setLocalEvents((current) => [...current, { ...event, id: `${Date.now()}-${Math.random().toString(36).slice(2)}` }])
+  }
+
+  function handleViewDetails(event, triggerElement) {
+    detailsTriggerRef.current = triggerElement
+    setSelectedEvent(event)
+  }
+
+  function handleCloseDetails() {
+    const triggerElement = detailsTriggerRef.current
+
+    setSelectedEvent(null)
+    detailsTriggerRef.current = null
+    requestAnimationFrame(() => triggerElement?.focus())
+  }
+
+  function handleCategoryChange(category) {
+    if (
+      selectedEvent &&
+      category !== 'All events' &&
+      selectedEvent.category !== category
+    ) {
+      setSelectedEvent(null)
+      detailsTriggerRef.current = null
+    }
+
+    setSelectedCategory(category)
+  }
 
   return (
     <main className="page-shell">
@@ -30,14 +65,18 @@ function App() {
         <CategoryFilter
           categories={categories}
           selectedCategory={selectedCategory}
-          onCategoryChange={setSelectedCategory}
+          onCategoryChange={handleCategoryChange}
         />
+        {selectedEvent && (
+          <EventDetails event={selectedEvent} onClose={handleCloseDetails} />
+        )}
         {visibleEvents.length > 0 ? (
-          <EventList events={visibleEvents} />
+          <EventList events={visibleEvents} onViewDetails={handleViewDetails} />
         ) : (
           <p className="empty-state">No events match this category yet.</p>
         )}
       </section>
+      <EventForm categories={categories} onSubmit={handleSubmitEvent} />
     </main>
   )
 }
