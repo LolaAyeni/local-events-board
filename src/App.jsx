@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import './App.css'
 import CategoryFilter from './components/CategoryFilter.jsx'
 import EventDetails from './components/EventDetails.jsx'
@@ -6,9 +6,33 @@ import EventList from './components/EventList.jsx'
 import EventForm from './components/EventForm.jsx'
 import events from './data/events.js'
 
+const STORAGE_KEY = 'local-events-board.submitted-events'
+const sampleEventIds = new Set(events.map((event) => String(event.id)))
+
+function loadEvents() {
+  try {
+    const saved = JSON.parse(window.localStorage.getItem(STORAGE_KEY) || '[]')
+    if (!Array.isArray(saved)) return events
+
+    const validSavedEvents = saved.filter(
+      (event) =>
+        event &&
+        typeof event === 'object' &&
+        event.id &&
+        !sampleEventIds.has(String(event.id)) &&
+        ['title', 'category', 'date', 'time', 'location', 'description'].every(
+          (field) => typeof event[field] === 'string' && event[field].trim(),
+        ),
+    )
+    return [...events, ...validSavedEvents]
+  } catch {
+    return events
+  }
+}
+
 function App() {
   const [selectedCategory, setSelectedCategory] = useState('All events')
-  const [localEvents, setLocalEvents] = useState(events)
+  const [localEvents, setLocalEvents] = useState(loadEvents)
   const [selectedEvent, setSelectedEvent] = useState(null)
   const detailsTriggerRef = useRef(null)
   const categories = [...new Set(localEvents.map((event) => event.category))]
@@ -16,6 +40,15 @@ function App() {
     selectedCategory === 'All events'
       ? localEvents
       : localEvents.filter((event) => event.category === selectedCategory)
+
+  useEffect(() => {
+    try {
+      const submittedEvents = localEvents.filter((event) => !sampleEventIds.has(String(event.id)))
+      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(submittedEvents))
+    } catch {
+      // Storage may be unavailable; the app continues with in-memory events.
+    }
+  }, [localEvents])
 
   function handleSubmitEvent(event) {
     setLocalEvents((current) => [...current, { ...event, id: `${Date.now()}-${Math.random().toString(36).slice(2)}` }])
