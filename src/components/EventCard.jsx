@@ -1,4 +1,4 @@
-function EventCard({ event }) {
+function EventCard({ event, onViewDetails }) {
   return (
     <article className="event-card">
       <span className="event-card__category">{event.category}</span>
@@ -20,6 +20,14 @@ function EventCard({ event }) {
       </dl>
 
       <p>{event.description}</p>
+      <button
+        className="event-card__button"
+        type="button"
+        aria-label={`View details for ${event.title}`}
+        onClick={(clickEvent) => onViewDetails(event, clickEvent.currentTarget)}
+      >
+        View details
+      </button>
     </article>
   )
 }
