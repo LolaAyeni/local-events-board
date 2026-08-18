@@ -1,4 +1,4 @@
-function EventCard({ event, onViewDetails }) {
+function EventCard({ event, isEditable, onEditEvent, onViewDetails }) {
   return (
     <article className="event-card">
       <span className="event-card__category">{event.category}</span>
@@ -20,14 +20,26 @@ function EventCard({ event, onViewDetails }) {
       </dl>
 
       <p>{event.description}</p>
-      <button
-        className="event-card__button"
-        type="button"
-        aria-label={`View details for ${event.title}`}
-        onClick={(clickEvent) => onViewDetails(event, clickEvent.currentTarget)}
-      >
-        View details
-      </button>
+      <div className="event-card__actions">
+        <button
+          className="event-card__button"
+          type="button"
+          aria-label={`View details for ${event.title}`}
+          onClick={(clickEvent) => onViewDetails(event, clickEvent.currentTarget)}
+        >
+          View details
+        </button>
+        {isEditable && (
+          <button
+            className="event-card__button"
+            type="button"
+            aria-label={`Edit ${event.title}`}
+            onClick={() => onEditEvent(event)}
+          >
+            Edit
+          </button>
+        )}
+      </div>
     </article>
   )
 }

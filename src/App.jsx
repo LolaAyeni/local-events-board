@@ -34,6 +34,7 @@ function App() {
   const [selectedCategory, setSelectedCategory] = useState('All events')
   const [localEvents, setLocalEvents] = useState(loadEvents)
   const [selectedEvent, setSelectedEvent] = useState(null)
+  const [editingEvent, setEditingEvent] = useState(null)
   const detailsTriggerRef = useRef(null)
   const categories = [...new Set(localEvents.map((event) => event.category))]
   const visibleEvents =
@@ -50,8 +51,29 @@ function App() {
     }
   }, [localEvents])
 
-  function handleSubmitEvent(event) {
-    setLocalEvents((current) => [...current, { ...event, id: `${Date.now()}-${Math.random().toString(36).slice(2)}` }])
+  function handleSubmitEvent(event, editingId) {
+    if (editingId) {
+      setLocalEvents((current) =>
+        current.map((currentEvent) =>
+          currentEvent.id === editingId ? { ...event, id: editingId } : currentEvent,
+        ),
+      )
+      setSelectedEvent((current) =>
+        current?.id === editingId ? { ...event, id: editingId } : current,
+      )
+      setEditingEvent(null)
+      return
+    }
+
+    setLocalEvents((current) => [
+      ...current,
+      { ...event, id: `${Date.now()}-${Math.random().toString(36).slice(2)}` },
+    ])
+  }
+
+  function handleEditEvent(event) {
+    if (sampleEventIds.has(String(event.id))) return
+    setEditingEvent(event)
   }
 
   function handleViewDetails(event, triggerElement) {
@@ -104,12 +126,22 @@ function App() {
           <EventDetails event={selectedEvent} onClose={handleCloseDetails} />
         )}
         {visibleEvents.length > 0 ? (
-          <EventList events={visibleEvents} onViewDetails={handleViewDetails} />
+          <EventList
+            events={visibleEvents}
+            onViewDetails={handleViewDetails}
+            onEditEvent={handleEditEvent}
+            sampleEventIds={sampleEventIds}
+          />
         ) : (
           <p className="empty-state">No events match this category yet.</p>
         )}
       </section>
-      <EventForm categories={categories} onSubmit={handleSubmitEvent} />
+      <EventForm
+        categories={categories}
+        editingEvent={editingEvent}
+        onCancelEdit={() => setEditingEvent(null)}
+        onSubmit={handleSubmitEvent}
+      />
     </main>
   )
 }
